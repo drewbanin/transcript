@@ -1,7 +1,7 @@
 var HEIGHT = 500;
 var WIDTH = window.innerWidth;
 
-var margin = {top: 80, right: 40, bottom: 100, left: 40},
+var margin = {top: 40, right: 40, bottom: 100, left: 40},
     width = WIDTH - margin.left - margin.right,
     height = HEIGHT - margin.top - margin.bottom;
 
@@ -9,6 +9,12 @@ var x = d3.scale.ordinal()
     .rangeRoundBands([0, width], .1);
 
 var x2 = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+var x3 = d3.scale.linear()
+    .range([0, width]);
+
+var x4 = d3.scale.ordinal()
     .rangeRoundBands([0, width], .1);
 
 var y = d3.scale.linear()
@@ -25,7 +31,7 @@ var xAxis = d3.svg.axis()
 var xAxis2 = d3.svg.axis()
     .scale(x2)
     .tickFormat(quarterLookup)
-    .tickSize(0, 0)
+    .tickSize(5, 5)
     .ticks(10, "s")
     .orient("bottom");
 
@@ -34,7 +40,15 @@ var yAxis = d3.svg.axis()
     .orient("left")
     .ticks(10);
 
-var svg = d3.select("body").append("svg")
+var line = d3.svg.line()
+    .x(function (d) {
+        return x3(d.NO);
+    })
+    .y(function (d) {
+        return y(d.GPA);
+    });
+
+var svg = d3.select("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
@@ -46,6 +60,8 @@ d3.json("transcript.json", function(error, data) {
 
   x.domain(_.map(data, 'Name'));
   x2.domain(_.map(data, 'Quarter'));
+  x3.domain(d3.extent(data, function(d) { return d.NO; }));
+  x4.domain(_.map(data, 'Nice Type'));
   y.domain([0, 4.0]);
 
   svg.append("g")
@@ -90,6 +106,11 @@ d3.json("transcript.json", function(error, data) {
       });
 
 
+  svg.append("path")
+      .datum(data)
+      .attr("class", "linePlot")
+      .attr("d", line);
+
   vm.registerClass(data[0]);
 });
 
@@ -97,7 +118,7 @@ var TranscriptViewModel = function() {
     this.currentClass = ko.observable(null);
 
     this.get = function(attr, disp) {
-      return disp + ": " + (this.currentClass() || {})[attr] || "";
+      return (this.currentClass() || {})[attr] || "";
     };
 
     this.registerClass = function(record) {
